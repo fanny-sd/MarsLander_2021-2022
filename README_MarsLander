@@ -1,0 +1,122 @@
+INITIAL PROBLEM PARAMETERS:
+The zone is 7000m wide and 3000m high.
+Landing zone: flat ground at least 1000 meters wide. 
+Task: Every second, depending on the current flight parameters (location, speed, fuel ...),  program must provide the new desired tilt angle and thrust power of Mars Lander
+Angle goes from -90 degrees to 90 degrees. Thrust power goes from 0 to 4.
+Gravity on Mars, g = 3.711 m/s^2
+'For a thrust power of $X$, a force equivalent to $X$ m/s$2$ is generated and $X$ litres of fuel are consumed per second. As such, a thrust power of 4 in an almost vertical direction is needed to compensate for the gravity on Mars.'
+
+Successful landing, the ship must:
+- land on flat ground
+- land in a vertical position (tilt angle = 0°)
+- vertical speed must be limited (<40m/s in absolute value)
+- horizontal speed must be limited (<20m/s in absolute value) => change
+
+--------------------
+FUNCTIONS
+
+mars_surface() : returns an array of size `(surfaceN, 2)` containing the points used to draw the surface of Mars
+and an integer `landing_site` giving the index of the row in this array containing the left-hand end of the flat landing site
+
+plot_surface(land, landing_site) : used to visualise the terrain. The flat landing site is shown with a dashed line.
+
+plot_lander(land, landing_site, X, thrust=None, animate=False, step=10) : ....
+
+interpolate_surface(land, x) : finds y coordinate that intercepts with Mars's land at the specified point x
+
+height(land, X) : returns the vertical height of the lander above the surface of Mars defined by the array `land` when it has coordinates `X = [x, y]`
+
+_height(_land, X): ??
+
+simulate(X0, V0, land, landing_site,fuel=200, dt=0.1, Nstep=1000, autopilot=None, print_interval=100) : solves the equations of motion for the Mars lander using the semi-implicit Euler method
+
+autopilot()
+     5 arguments: 
+    - `i` is an integer giving step count - e.g. useful for printing debugging information every 100 steps.
+    - `X` is a 2D vector containing the current coordinates of Mars Lander (in meters).
+    - `V` is 2D vector containing the horizontal and vertical speed of Mars Lander (in m/s). These can be negative depending on the direction of the lander.
+    - `fuel` is the remaining quantity of fuel in litres. When there is no more fuel, the power of thrusters falls to zero
+    - `rotate` is the angle of rotation of Mars Lander expressed in degrees
+    - `power` is the thrust power of the landing ship.
+    2 return - integers (rotate, power), where    
+    - `rotate` is the desired rotation angle for Mars Lander, in degrees
+    - `power` is the desired thrust power. 0 = off. 4 = maximum power
+
+proportional_autopilot(i, X, V, fuel, rotate, power) / return (rotate, power): 
+NB: will need to resort to trial and error when tuning K_h and K_p
+----------------------
+NUMERICAL SOLUTION OF THE EQUATIONS OF MOTION
+
+The horizontal and verticals accelerations of the lander are given by: 
+x·· = P cos(theta)
+y·· = - g + P sin(theta)
+
+where g is the acceleration due to gravity ; 
+        t = (P sin(theta) , P cos (theta)) is the thrust provided by the thruster with power P at and theta
+   0 < P < 4
+-90 < theta < 90º
+
+NB: Additional optional arguments can be used to specify the amount of fuel, timestep `dt`, maximum number of steps `T`, whether to enable an autopilot to control the thruster power and how often to print output.
+
+-------------------------
+
+POTENTIAL AND KINETIC ENERGIES OF THE LANDER DURING TRAJECTORY
+
+V = m * g * h
+T = 1/2 * m * v^2
+E = T + V
+where  V, T and E denote the potential, kinetic and total energies respectively; m is the mass of the lander, h is its height and v is is speed and g is the acceleration due to gravity
+g = 3.711 m/s^2 on Mars
+Mass of Lander: m = 100kg
+
+TASK??
+Adjust the timestep dt passed to simulate() to ensure there is less than a 0.1% drift in the total energy over 1 second of simulated time
+i.e. Delta(E)/E < 10^-3 . You may find it helpful to plot a graph of the relative error in E as a function of time. 
+(already done, see section ...)
+---------------------------
+PROPORTIONAL CONTROL
+
+autopilot goal: adjust automatically the lander’s controls (thrust, and later the angle as well) to bring it safely to the surface
+
+We want to use the engine’s thrust to control the rate of descent. Suppose our strategy is that the descent rate should decrease linearly as the lander approaches the surface, i.e. with target vertical velocity:
+v_y (target) = = −(c + K_h * h)
+    where h is the lander’s altitude and K_h is a positive constant. 
+
+The descent rate should then approach c m/s as the lander touches down (with c = 10 m/s should be safely within the 40 m/s limit)
+
+Error term:
+
+e = v_y(target) - v_y = −(c + K_h * h + v_y)    
+    which is positive if the lander is descending too quickly and negative if the lander is descending too slowly.
+
+Instantaneous output of a proportional controller is then:
+P(out) = K_p * e
+    where K_p is a positive constant known as the controller gain
+
+Note: Ideally, we would use P(out) to control directly the engine’s throttle, but here we must diverge a little from perfect proportional control theory, 
+since whereas P(out) might take any real value representing arbitrary forward and reverse thrust, the lander’s engine is only capable of delivering a limited amount of forward thrust corresponding to throttle values in the range 0 to 4.
+
+----------------------------
+AJUSTING AUTOPILOT PARAMETERS
+Adjust your autopilot to work cope with:
+1. random vertical starting positions between 1500 and 3000m
+2. random changes in the initial vertical velocity (-50 < v_y < 50 m/s)
+3. different random Martian surfaces. 
+To pass each of the three tests you need to achieve at least an 80% success rate over 20 trials.
+
+-----------------------------
+
+Coordinates of Mars Lander: X = [x, y] => 2D Vector
+
+X0 : initial position of the lander (2-element vector for `X` and `Y` coordinates)
+V0 : initial velocity
+
+V => 2D vector for vertial and horizontal velocity
+
+c : target landing speed
+
+Fuel = 400
+
+
+
+
